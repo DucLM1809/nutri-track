@@ -6,7 +6,39 @@ import { TokenType, User } from '@prisma/client';
 import prisma from '../client';
 import { encryptPassword, isPasswordMatch } from '../utils/encryption';
 import { AuthTokensResponse } from '../types/response';
+import { CreateUser } from '../types/user';
+import { CreateBmiRecord } from '../types/bmi';
 import exclude from '../utils/exclude';
+
+const register = async (
+  user: CreateUser,
+  bmiRecord: CreateBmiRecord,
+  medicalConditionIds: string[]
+) => {
+  const { email, password } = user;
+
+  if (await userService.getUserByEmail(email)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
+  }
+
+  return prisma.user.create({
+    data: {
+      ...user,
+      password: await encryptPassword(password),
+      bmiRecords: {
+        create: bmiRecord
+      }
+    },
+    include: {
+      bmiRecords: {
+        select: {
+          height: true,
+          weight: true
+        }
+      }
+    }
+  });
+};
 
 /**
  * Login with username and password
@@ -24,7 +56,11 @@ const loginUserWithEmailAndPassword = async (
     'name',
     'password',
     'role',
-    'isEmailVerified',
+    'avatar',
+    'dob',
+    'gender',
+    'accountType',
+    'expertProfileId',
     'createdAt',
     'updatedAt'
   ]);
@@ -42,9 +78,8 @@ const loginUserWithEmailAndPassword = async (
 const logout = async (refreshToken: string): Promise<void> => {
   const refreshTokenData = await prisma.token.findFirst({
     where: {
-      token: refreshToken,
-      type: TokenType.REFRESH,
-      blacklisted: false
+      value: refreshToken,
+      type: TokenType.REFRESH
     }
   });
   if (!refreshTokenData) {
@@ -93,32 +128,12 @@ const resetPassword = async (resetPasswordToken: string, newPassword: string): P
   }
 };
 
-/**
- * Verify email
- * @param {string} verifyEmailToken
- * @returns {Promise<void>}
- */
-const verifyEmail = async (verifyEmailToken: string): Promise<void> => {
-  try {
-    const verifyEmailTokenData = await tokenService.verifyToken(
-      verifyEmailToken,
-      TokenType.VERIFY_EMAIL
-    );
-    await prisma.token.deleteMany({
-      where: { userId: verifyEmailTokenData.userId, type: TokenType.VERIFY_EMAIL }
-    });
-    await userService.updateUserById(verifyEmailTokenData.userId, { isEmailVerified: true });
-  } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
-  }
-};
-
 export default {
+  register,
   loginUserWithEmailAndPassword,
   isPasswordMatch,
   encryptPassword,
   logout,
   refreshAuth,
-  resetPassword,
-  verifyEmail
+  resetPassword
 };

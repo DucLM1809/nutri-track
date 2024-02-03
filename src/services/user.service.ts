@@ -1,6 +1,7 @@
-import { User, Role, Prisma } from '@prisma/client';
+import { User, Role, Gender, Prisma } from '@prisma/client';
 import httpStatus from 'http-status';
 import prisma from '../client';
+import { CreateUser } from '../types/user';
 import ApiError from '../utils/ApiError';
 import { encryptPassword } from '../utils/encryption';
 
@@ -9,21 +10,17 @@ import { encryptPassword } from '../utils/encryption';
  * @param {Object} userBody
  * @returns {Promise<User>}
  */
-const createUser = async (
-  email: string,
-  password: string,
-  name?: string,
-  role: Role = Role.USER
-): Promise<User> => {
+const createUser = async (user: CreateUser): Promise<User> => {
+  const { email, password } = user;
+
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
+
   return prisma.user.create({
     data: {
-      email,
-      name,
-      password: await encryptPassword(password),
-      role
+      ...user,
+      password: await encryptPassword(password)
     }
   });
 };
@@ -45,16 +42,7 @@ const queryUsers = async <Key extends keyof User>(
     sortBy?: string;
     sortType?: 'asc' | 'desc';
   },
-  keys: Key[] = [
-    'id',
-    'email',
-    'name',
-    'password',
-    'role',
-    'isEmailVerified',
-    'createdAt',
-    'updatedAt'
-  ] as Key[]
+  keys: Key[] = ['id', 'email', 'name', 'password', 'role', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key>[]> => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
@@ -78,16 +66,7 @@ const queryUsers = async <Key extends keyof User>(
  */
 const getUserById = async <Key extends keyof User>(
   id: number,
-  keys: Key[] = [
-    'id',
-    'email',
-    'name',
-    'password',
-    'role',
-    'isEmailVerified',
-    'createdAt',
-    'updatedAt'
-  ] as Key[]
+  keys: Key[] = ['id', 'email', 'name', 'password', 'role', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key> | null> => {
   return prisma.user.findUnique({
     where: { id },
@@ -109,7 +88,11 @@ const getUserByEmail = async <Key extends keyof User>(
     'name',
     'password',
     'role',
-    'isEmailVerified',
+    'avatar',
+    'dob',
+    'gender',
+    'accountType',
+    'expertProfileId',
     'createdAt',
     'updatedAt'
   ] as Key[]

@@ -10,32 +10,91 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id              Int      @id @default(autoincrement())
-  email           String   @unique
-  name            String?
-  password        String
-  role            Role     @default(USER)
-  isEmailVerified Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  Token           Token[]
-}
-
 model Token {
   id          Int       @id @default(autoincrement())
-  token       String
+  value       String
   type        TokenType
-  expires     DateTime
-  blacklisted Boolean
-  createdAt   DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id])
   userId      Int
+  lastDeposit DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model User {
+  id          Int         @id @default(autoincrement())
+  name        String
+  email       String      @unique
+  password    String
+  avatar      String
+  dob         DateTime
+  gender      Gender      @default(MALE)
+  role        Role        @default(USER)
+  accountType AccountType @default(BASIC)
+
+  expertProfileId Int?
+  expertProfile   ExpertProfile? @relation(fields: [expertProfileId], references: [id])
+
+  bmiRecords             BmiRecords[]
+  medicalConditionsUsers MedicalConditionsUser[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExpertProfile {
+  id          Int     @id @default(autoincrement())
+  certImage   String
+  description String?
+
+  users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BmiRecords {
+  id     Int   @id @default(autoincrement())
+  weight Float
+  height Float
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MedicalConditions {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String? @db.Text
+  high        String? @db.Text
+  low         String? @db.Text
+  avoid       String? @db.Text
+
+  medicalConditionsUsers MedicalConditionsUser[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MedicalConditionsUser {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  conditionId      Int
+  medicalCondition MedicalConditions @relation(fields: [conditionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
   USER
   ADMIN
+  EXPERT
 }
 
 enum TokenType {
@@ -43,4 +102,18 @@ enum TokenType {
   REFRESH
   RESET_PASSWORD
   VERIFY_EMAIL
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AccountType {
+  BASIC
+  SILVER
+  GOLD
+  DIAMOND
+  VIP
 }

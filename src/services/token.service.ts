@@ -41,19 +41,17 @@ const generateToken = (
  * @returns {Promise<Token>}
  */
 const saveToken = async (
-  token: string,
+  value: string,
   userId: number,
-  expires: Moment,
-  type: TokenType,
-  blacklisted = false
+  lastDeposit: Moment,
+  type: TokenType
 ): Promise<Token> => {
   const createdToken = prisma.token.create({
     data: {
-      token,
+      value,
       userId: userId,
-      expires: expires.toDate(),
-      type,
-      blacklisted
+      lastDeposit: lastDeposit.toDate(),
+      type
     }
   });
   return createdToken;
@@ -65,11 +63,11 @@ const saveToken = async (
  * @param {string} type
  * @returns {Promise<Token>}
  */
-const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
-  const payload = jwt.verify(token, config.jwt.secret);
+const verifyToken = async (value: string, type: TokenType): Promise<Token> => {
+  const payload = jwt.verify(value, config.jwt.secret);
   const userId = Number(payload.sub);
   const tokenData = await prisma.token.findFirst({
-    where: { token, type, userId, blacklisted: false }
+    where: { value, type, userId }
   });
   if (!tokenData) {
     throw new Error('Token not found');
@@ -118,23 +116,10 @@ const generateResetPasswordToken = async (email: string): Promise<string> => {
   return resetPasswordToken;
 };
 
-/**
- * Generate verify email token
- * @param {User} user
- * @returns {Promise<string>}
- */
-const generateVerifyEmailToken = async (user: { id: number }): Promise<string> => {
-  const expires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
-  const verifyEmailToken = generateToken(user.id, expires, TokenType.VERIFY_EMAIL);
-  await saveToken(verifyEmailToken, user.id, expires, TokenType.VERIFY_EMAIL);
-  return verifyEmailToken;
-};
-
 export default {
   generateToken,
   saveToken,
   verifyToken,
   generateAuthTokens,
-  generateResetPasswordToken,
-  generateVerifyEmailToken
+  generateResetPasswordToken
 };

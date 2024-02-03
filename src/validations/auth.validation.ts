@@ -1,10 +1,13 @@
 import Joi from 'joi';
 import { password } from './custom.validation';
+import { createBmiRecordSchema } from './bmi.validation';
+import { createUserSchema } from './user.validation';
 
 const register = {
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().custom(password)
+    user: createUserSchema.required(),
+    bmiRecord: createBmiRecordSchema.required(),
+    medicalConditionIds: Joi.array().items(Joi.string()).required()
   })
 };
 
@@ -42,18 +45,11 @@ const resetPassword = {
   })
 };
 
-const verifyEmail = {
-  query: Joi.object().keys({
-    token: Joi.string().required()
-  })
-};
-
 export default {
   register,
   login,
   logout,
   refreshTokens,
   forgotPassword,
-  resetPassword,
-  verifyEmail
+  resetPassword
 };

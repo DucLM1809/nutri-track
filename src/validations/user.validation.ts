@@ -1,13 +1,40 @@
-import { Role } from '@prisma/client';
+import { AccountType, Gender, Role } from '@prisma/client';
 import Joi from 'joi';
 import { password } from './custom.validation';
+
+export const createUserSchema = Joi.object({
+  email: Joi.string().required().email(),
+  password: Joi.string().required().custom(password),
+  name: Joi.string().required(),
+  avatar: Joi.string().required(),
+  role: Joi.string().valid(Role.USER, Role.ADMIN),
+  gender: Joi.string().valid(Gender.MALE, Gender.FEMALE, Gender.OTHER),
+  accountType: Joi.string().valid(
+    AccountType.VIP,
+    AccountType.GOLD,
+    AccountType.BASIC,
+    AccountType.SILVER,
+    AccountType.DIAMOND
+  ),
+  dob: Joi.date().required()
+});
 
 const createUser = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().custom(password),
     name: Joi.string().required(),
-    role: Joi.string().required().valid(Role.USER, Role.ADMIN)
+    avatar: Joi.string().required(),
+    role: Joi.string().valid(Role.USER, Role.ADMIN),
+    gender: Joi.string().valid(Gender.MALE, Gender.FEMALE, Gender.OTHER),
+    accountType: Joi.string().valid(
+      AccountType.VIP,
+      AccountType.GOLD,
+      AccountType.BASIC,
+      AccountType.SILVER,
+      AccountType.DIAMOND
+    ),
+    dob: Joi.date().required()
   })
 };
 
