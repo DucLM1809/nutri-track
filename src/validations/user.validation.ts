@@ -19,6 +19,10 @@ export const createUserSchema = Joi.object({
   dob: Joi.date().required()
 });
 
+export const ExpertProfileSchema = Joi.object({
+  certImage: Joi.string().required()
+});
+
 const createUser = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),

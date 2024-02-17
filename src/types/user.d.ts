@@ -4,4 +4,10 @@ export interface CreateUser {
   name: string;
   avatar: string;
   dob: Date;
+  description?: string;
+}
+
+export interface ExpertProfile {
+  certImage: string;
+  description: string;
 }

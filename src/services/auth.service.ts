@@ -2,18 +2,19 @@ import httpStatus from 'http-status';
 import tokenService from './token.service';
 import userService from './user.service';
 import ApiError from '../utils/ApiError';
-import { TokenType, User } from '@prisma/client';
+import { ApplicationStatus, ApplicationType, TokenType, User } from '@prisma/client';
 import prisma from '../client';
 import { encryptPassword, isPasswordMatch } from '../utils/encryption';
 import { AuthTokensResponse } from '../types/response';
 import { CreateUser } from '../types/user';
 import { CreateBmiRecord } from '../types/bmi';
 import exclude from '../utils/exclude';
+import { ExpertApplication } from '../types/application';
 
 const register = async (
   user: CreateUser,
   bmiRecord: CreateBmiRecord,
-  medicalConditionIds: string[]
+  medicalConditionIds: number[]
 ) => {
   const { email, password } = user;
 
@@ -27,15 +28,47 @@ const register = async (
       password: await encryptPassword(password),
       bmiRecords: {
         create: bmiRecord
+      },
+      medicalConditions: {
+        create: medicalConditionIds.map((id) => ({
+          medicalCondition: {
+            connect: {
+              id
+            }
+          }
+        }))
       }
     },
     include: {
-      bmiRecords: {
-        select: {
-          height: true,
-          weight: true
-        }
+      bmiRecords: true,
+      medicalConditions: true
+    }
+  });
+};
+
+const registerExpert = async (user: CreateUser, application: ExpertApplication) => {
+  const { email, password } = user;
+
+  if (await userService.getUserByEmail(email)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
+  }
+
+  return prisma.user.create({
+    data: {
+      ...user,
+      password: await encryptPassword(password),
+      applications: {
+        create: [
+          {
+            ...application,
+            status: ApplicationStatus.PENDING,
+            type: ApplicationType.EXPERT
+          }
+        ]
       }
+    },
+    include: {
+      applications: true
     }
   });
 };
@@ -130,6 +163,7 @@ const resetPassword = async (resetPasswordToken: string, newPassword: string): P
 
 export default {
   register,
+  registerExpert,
   loginUserWithEmailAndPassword,
   isPasswordMatch,
   encryptPassword,

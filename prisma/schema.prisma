@@ -34,8 +34,9 @@ model User {
   expertProfileId Int?
   expertProfile   ExpertProfile? @relation(fields: [expertProfileId], references: [id])
 
-  bmiRecords             BmiRecords[]
-  medicalConditionsUsers MedicalConditionsUser[]
+  bmiRecords        BmiRecords[]
+  medicalConditions MedicalConditionsUser[]
+  applications      Applications[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -72,7 +73,7 @@ model MedicalConditions {
   low         String? @db.Text
   avoid       String? @db.Text
 
-  medicalConditionsUsers MedicalConditionsUser[]
+  users MedicalConditionsUser[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -86,6 +87,22 @@ model MedicalConditionsUser {
 
   conditionId      Int
   medicalCondition MedicalConditions @relation(fields: [conditionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Applications {
+  id          Int               @id @default(autoincrement())
+  status      ApplicationStatus
+  type        ApplicationType
+  image       String
+  description String
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  approvedById Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -116,4 +133,14 @@ enum AccountType {
   GOLD
   DIAMOND
   VIP
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApplicationType {
+  EXPERT
 }

@@ -2,12 +2,20 @@ import Joi from 'joi';
 import { password } from './custom.validation';
 import { createBmiRecordSchema } from './bmi.validation';
 import { createUserSchema } from './user.validation';
+import { expertApplicationSchema } from './application.validation';
 
 const register = {
   body: Joi.object().keys({
     user: createUserSchema.required(),
     bmiRecord: createBmiRecordSchema.required(),
-    medicalConditionIds: Joi.array().items(Joi.string()).required()
+    medicalConditionIds: Joi.array().items(Joi.number()).required()
+  })
+};
+
+const registerExpert = {
+  body: Joi.object().keys({
+    user: createUserSchema.required(),
+    application: expertApplicationSchema.required()
   })
 };
 
@@ -47,6 +55,7 @@ const resetPassword = {
 
 export default {
   register,
+  registerExpert,
   login,
   logout,
   refreshTokens,

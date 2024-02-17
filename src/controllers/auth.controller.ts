@@ -12,6 +12,14 @@ const register = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.CREATED).send({ user: userWithoutPassword, tokens });
 });
 
+const registerExpert = catchAsync(async (req: Request, res: Response) => {
+  const { user, application } = req.body;
+  const createdUser = await authService.registerExpert(user, application);
+  const userWithoutPassword = exclude(createdUser, ['password', 'createdAt', 'updatedAt']);
+  const tokens = await tokenService.generateAuthTokens(createdUser);
+  res.status(httpStatus.CREATED).send({ user: userWithoutPassword, tokens });
+});
+
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const user = await authService.loginUserWithEmailAndPassword(email, password);
@@ -41,6 +49,7 @@ const resetPassword = catchAsync(async (req, res) => {
 
 export default {
   register,
+  registerExpert,
   login,
   logout,
   refreshTokens,

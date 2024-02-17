@@ -1,7 +1,7 @@
-import { User, Role, Gender, Prisma } from '@prisma/client';
+import { User, Prisma, AccountType, Role } from '@prisma/client';
 import httpStatus from 'http-status';
 import prisma from '../client';
-import { CreateUser } from '../types/user';
+import { CreateUser, ExpertProfile } from '../types/user';
 import ApiError from '../utils/ApiError';
 import { encryptPassword } from '../utils/encryption';
 
@@ -143,11 +143,40 @@ const deleteUserById = async (userId: number): Promise<User> => {
   return user;
 };
 
+const createExpertProfile = async (userId: number, profile: ExpertProfile) => {
+  try {
+    const user = await getUserById(userId);
+
+    if (!user) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    return prisma.user.update({
+      where: { id: user.id },
+      data: {
+        expertProfile: {
+          upsert: {
+            update: profile,
+            create: profile
+          }
+        },
+        role: Role.EXPERT
+      },
+      include: {
+        expertProfile: true
+      }
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Error creating expert profile');
+  }
+};
+
 export default {
   createUser,
   queryUsers,
   getUserById,
   getUserByEmail,
   updateUserById,
-  deleteUserById
+  deleteUserById,
+  createExpertProfile
 };
